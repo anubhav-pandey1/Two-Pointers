@@ -40,34 +40,38 @@ vector<vector<int>> threeSumHash(vector<int>& v, int K) {
 }
 
 // Method 2:- Two Pointers
+// Sort the array since we don't need to return indices, only values -> Two Pointers approach can be used
+// a + b + c = K, we will fix a and find (b,c) using the Two Pointers approach
+// To avoid using a set (and extra O(M) space), we will jump over duplicates for a/b/c
+// We will jump over duplicates of a (fix) only after the Two Pointer stuff is complete for that a so that..
+// ..we don't miss cases where b or c take up a value equal to the duplicate of a (duplicates are adjacent in sorted arrays)
+// We will jump over duplicates of (b,c) only when we find a triplet (a,b,c) as it is only needed to avoid duplicate answers
 
 vector<vector<int>> threeSum(vector<int>& v, int K) {
 	vector<vector<int>> triplets;
 	sort(v.begin(), v.end());
-	for (int fix = 0; fix < v.size(); fix++) {
-		int left = fix + 1, right = v.size() - 1;
-		int target = K - v[fix];
-		while (left < right) {
-			while (v[left] == v[left + 1])
-				left++;
-			while (v[right] == v[right - 1])
-				right--;
-			if (v[left] + v[right] > target) {
-				right--;
-			}
-			else if (v[left] + v[right] < target) {
-				left++;
-			}
-			else {
-				triplets.push_back({v[fix], v[left], v[right]});
-				left--, right++;
-			}
+	for (int fix = 0; fix < v.size(); fix++) {                                   // Iterate over all possible values of a/fix
+		int left = fix + 1, right = v.size() - 1, target = K - v[fix];           // Define the initial states of the two pointers and the target
+		while (left < right) {                                                   // Two Pointer stuff gets over when left-ptr goes beyond right-ptr
+			if (v[left] + v[right] == target) {                                  // Triplet found
+				triplets.push_back({v[fix], v[left], v[right]});                 // Storing the triplet
+				while (left < right && v[right] == v[right - 1]) right--;        // Jump over duplicates of right till the last duplicate value (1 more jump needed)
+				while (left < right && v[left] == v[left + 1]) left++;           // Jump over duplicates of left till the last duplicate value (1 more jump needed)
+				left++, right--;                                                 // Go to the next value which is not the same as the prev. left and right
+			}                                                                    // ^This line also needed for cases when there are no duplicates
+			else if (v[left] + v[right] > target)                                // If curr. sum exceeds target, we need to reduce it
+				// while (right > 0 && v[right] == v[right - 1]) right--;        // Not needed but we can jump over all but 1 duplicates of right to get to the last duplicate value
+				right--;                                                         // Reduce curr. sum by reducing the larger value of the (left, right) pair
+			else if (v[left] + v[right] < target)                                // If curr. sum is less than the target, we need to increase it
+				// while (left < v.size() - 1 && v[left] == v[left + 1]) left++; // Not needed but we can jump over all but 1 duplicates of left to get to the last duplicate value
+				left++;                                                          // Increase curr. sum by increasing the larger value of the (left, right) pair
 		}
-		while (v[fix] == v[fix + 1])
-			fix++;
-	}
+		while (fix + 1 < v.size() && v[fix + 1] == v[fix]) fix++;                // Jumping over duplicates of fix/a only after 2-ptr stuff is complete
+	}                                                                            // ^so that we can avoid on missing out on cases where (a, a, a) is the answer
 	return triplets;
 }
+
+// Time complexity => O(N^2), Auxiliary Space complexity => O(1)
 
 int main() {
 	ios_base::sync_with_stdio(false);
@@ -145,19 +149,23 @@ int main() {
 
 // Inputs:
 
-// 4
-// 10
-// 4
-// 2 5 5 11
-// 9
-// 4
-// 2 7 11 15
-// 6
-// 3
-// 3 2 4
-// 6
-// 2
-// 3 3
+// 8
+// 10 7
+// 2 5 5 11 0 1 7
+// 9 7
+// 2 7 11 15 0 3 6
+// 6 5
+// 3 2 4 0 1
+// 6 5
+// 3 3 0 3 3
+// 0 0
+
+// 0 1
+// 0
+// 0 10
+// 1 2 3 4 5 6 7 8 9
+// 0 7
+// -1 0 1 2 -1 -4
 
 // Outputs:
 
