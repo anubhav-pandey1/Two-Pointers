@@ -105,46 +105,6 @@ int main() {
 	return 0;
 }
 
-// Greedy optimization will not work:-
-// Counter case is [3, 2, 4] for target = 6
-// It gets stuck on i = 0 and j oscilatting between j = 1 and j = 2
-
-// vector<int> twoSum(vector<int>& v, int target) {
-// 	int i = 0, j = v.size() - 1;
-// 	vector<int> result;
-// 	int curr = INT_MIN;
-// 	while (curr != target) {
-// 		curr = v[i] + v[j];
-// 		vector<int> neighbours = {i + 1, i - 1, j + 1, j - 1};
-// 		vector<int> filteredNbrs, nbrValues;
-// 		for (auto n : neighbours) {
-// 			if (n >= 0 && n < v.size() && n != i && n != j) {
-// 				filteredNbrs.push_back(n);
-// 				nbrValues.push_back(v[n]);
-// 			}
-// 		}
-// 		if (curr > target) {
-// 			int min = min_element(nbrValues.begin(), nbrValues.end()) - nbrValues.begin();
-// 			if (v[i] > v[j])
-// 				i = filteredNbrs[min];
-// 			else
-// 				j = filteredNbrs[min];
-// 		}
-// 		else if (curr < target) {
-// 			int max = max_element(nbrValues.begin(), nbrValues.end()) - nbrValues.begin();
-// 			if (v[i] < v[j])
-// 				i = filteredNbrs[max];
-// 			else
-// 				j = filteredNbrs[max];
-// 		}
-// 		else {
-// 			result.push_back(i);
-// 			result.push_back(j);
-// 		}
-// 	}
-// 	return result;
-// }
-
 // Testcases:-
 
 // Inputs:
