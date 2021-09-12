@@ -14,9 +14,9 @@ int trappingRainwater1(vector<int>& v) {
 	int total = 0;
 	for (int i = 0; i < v.size(); i++) {
 		int leftMax = 0, rightMax = 0;
-		for (int l = i; l >= 0; l--)
+		for (int l = i; l < v.size(); l++)
 			leftMax = max(leftMax, v[l]);
-		for (int r = i; r < v.size(); r++)
+		for (int r = i; r >= 0; r--)
 			rightMax = max(rightMax, v[r]);
 
 		int lvl = min(leftMax, rightMax);
@@ -25,42 +25,110 @@ int trappingRainwater1(vector<int>& v) {
 	return total;
 }
 
-// Method 2:- Two Pointers Approach
+// Method 2:- Precompute Prefix Max and Suffix Max
+// Instead of calculating leftMax and rightMax for all steps, just precompute and store it once
+// Rest of the steps are similar to Method 1
+// Time Complexity: O(N) since we only need to calculate max(s) once
+// Space Complexity: O(N) since extra space needed for suffix/prefix arrays
+
+int trappingRainwater2(vector<int>& v) {
+	int N = v.size(), total = 0;
+	vector<int> prefixMax(N, 0), suffixMax(N, 0);
+	prefixMax[0] = v[0], suffixMax[N - 1] = v[N - 1];
+	for (int i = 1; i < N; i++)
+		prefixMax[i] = max(v[i], prefixMax[i - 1]);
+	for (int j = N - 2; j >= 0; j--)
+		suffixMax[j] = max(v[j], suffixMax[j + 1]);
+
+	for (int i = 0; i < v.size(); i++) {
+		int leftMax = prefixMax[i], rightMax = suffixMax[i];
+		int level = min(leftMax, rightMax);
+		total += max(0, level - v[i]);
+	}
+	return total;
+}
+
+// Method 3:- Two Pointer Approach
+// Time Complexity: O(N) for covering all the elements of the array once
+// Space Complexity: O(1) since no extra data structure needed
 
 int trappingRainwater(vector<int>& v) {
-	int total = 0;
+	int left = 0, right = v.size() - 1;            // Two pointers to move and cover the array
+	int leftMax = 0, rightMax = 0, total = 0;      // leftMax: curr. max from left, rightMax: curr. max from right
+	while (left <= right) {                        // While the two pointers do not cross each other..
+		if (v[left] <= v[right]) {                 // leftMax <= rightMax too else v[left] at leftMax > v[right] switches to else{}
+			leftMax = max(leftMax, v[left]);       // Update the current leftMax if curr. v[left] > leftMax
+			total += max(0, leftMax - v[left]);    // leftMax == min(leftMax, rightMax) as well since leftMax <= rightMax
+			left++;                                // Move left only if leftMax <= rightMax till we find a left > right
+		}                                          // right stays fixed for if{} so if left > right, v[left] > rightMax
+		else {                                     // This means that leftMax > rightMax too else v[right] at rightMax >= v[left] switches to if()
+			rightMax = max(rightMax, v[right]);    // Update the current rightMax if curr. v[right] > rightMax
+			total += max(0, rightMax - v[right]);  // rightMax == min(leftMax, rightMax) as well since leftMax > rightMax
+			right--;                               // Move right only if leftMax > rightMax till we find a left <= right
+		}                                          // left stays fixed for else{} so if left <= right, v[left] <= rightMax
+	}
+	return total;
+}
 
-	int leftMax = 0;
+// Method 4:- Two Pointers Approach - pointers to find the closest global/local peaks
+// 1. Start with a total equal to 0
+// 2. Find first peak from the left (leftMax)
+// 3. Find the closest peak to the right of leftMax (rightMax)
+// 4. If rightMax >= leftMax, it is sufficient to find water levels so break the search loop
+// 5. Run a loop from leftMax to rightMax and add max(0, min(leftMax,rightMax) - v[x]) to the total
+// 6. If rightMax < leftMax, store it for now (tempPeak) but continue looking for a rightMax >= leftMax
+// 7. While looking, if you encounter a rightMax < leftMax but rightMax > tempPeak, update tempPeak and rightMax
+// 8. If a better rightMax found by the end, go with it else use the current rightMax only
+// 9. Implement a unique check for the last element (it could be a peak as well)
+// 10. Update leftMax to be equal to current rightMax for the next iteration from rightMax to newRightMax
+// 11. If leftMax == rightMax at any point, the search has struck a local minima and gotten stuck so break it
 
-	while (leftMax < v.size()) {
-		for (int i = leftMax + 1; i < v.size(); i++) {
-			if (v[0] < v[1] && v[i] >= v[i + 1] && v[i] > v[i - 1]) {
-				leftMax = i;
-				break;
-			}
+// Time Complexity: O(N) since all elements visited twice at max
+// Space Complexity: O(1) since no extra data structure used
+
+int trappingRainwater4(vector<int>& v) {
+	int total = 0, leftMax = 0, x = 0;
+	for (int i = 1; i < v.size(); i++) {
+		if (v[0] < v[1] && v[i] >= v[i + 1] && v[i] > v[i - 1]) {
+			leftMax = i;
+			break;
 		}
+	}
 
-		int rightMax = 0;
+	while (x != v.size()) {
+		int rightMax = leftMax, tempPeak = 0;
+
 		for (int j = leftMax + 1; j < v.size(); j++) {
-			if (v[leftMax] > v[j] && v[j] >= v[j + 1] && v[j] > v[j - 1]) {
+			if (j == v.size() - 1) {
+				if (v[j] > v[j - 1] && v[j] > tempPeak) {
+					rightMax = j;
+					break;
+				}
+			}
+			else if (v[leftMax] > v[j] && v[j] >= v[j + 1] && v[j] > v[j - 1] && v[j] > tempPeak) {
 				rightMax = j;
+				tempPeak = v[j];
 				continue;
 			}
-			if (v[j] >= v[leftMax]) {
+			else if (v[j] >= v[leftMax] && v[j] >= v[j + 1] && v[j] > v[j - 1]) {
 				rightMax = j;
 				break;
 			}
 		}
 
 		int lvl = min(v[leftMax], v[rightMax]);
-		for (int x = leftMax + 1; x < rightMax; x++) {
-			total += max(0, lvl - v[x]);
-		}
+		x = leftMax + 1;
+		while (x < rightMax)
+			total += max(0, lvl - v[x++]);
+
+		if (leftMax == rightMax)
+			break;
 
 		leftMax = rightMax;
 	}
 	return total;
 }
+
 
 int main() {
 	ios_base::sync_with_stdio(false);
@@ -123,7 +191,7 @@ int main() {
 
 // Inputs:
 
-// 7
+// 9
 // 1
 // 0
 // 4
@@ -138,6 +206,10 @@ int main() {
 // 0 1 0 2 1 0 1 3 2 1 2 1
 // 8
 // 4 2 0 3 2 4 3 4
+// 6
+// 4 4 4 7 1 0
+// 8
+// 0 1 1 1 1 1 2 1
 
 // Outputs:
 
@@ -148,3 +220,5 @@ int main() {
 // 9
 // 6
 // 10
+// 0
+// 0
