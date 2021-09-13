@@ -8,6 +8,7 @@ using namespace std;
 // Method 1:- Brute force: Calculate water level for each cell
 // At any cell, water height = min. of (max height towards its left, max height towards its right)
 // These need not be closest, local maximas but global maximas towards left and right
+
 // Time complexity: O(N^2), Space complexity: O(1)
 
 int trappingRainwater1(vector<int>& v) {
@@ -28,6 +29,7 @@ int trappingRainwater1(vector<int>& v) {
 // Method 2:- Precompute Prefix Max and Suffix Max
 // Instead of calculating leftMax and rightMax for all steps, just precompute and store it once
 // Rest of the steps are similar to Method 1
+
 // Time Complexity: O(N) since we only need to calculate max(s) once
 // Space Complexity: O(N) since extra space needed for suffix/prefix arrays
 
@@ -48,29 +50,42 @@ int trappingRainwater2(vector<int>& v) {
 	return total;
 }
 
-// Method 3:- Two Pointer Approach
+// Method 3:- Two Pointer Approach with Lower Envelope Technique
+// Need to figure out min(max[0, i], max[i, N-1]) for each i without using O(N) space or time
+// max[0, i] is the leftMax for i; max[i, N-1] is the rightMax for i; Plot their functions for clarity
+// We can figure out leftMax(i) on the go, but rightMax(i) requires an iteration from i to N-1
+// We can use a second pointer from N-1 to 0 to figure out max[j, N-1] on the go ie. rightMax for j
+// Using leftMax(i) and rightMax(j), we can figure out g(i) = min(max[0, i], max[i, N-1]) ie. lower envelope
+// In [0, N-1], Prefix Max (leftMax()) is monotinically increasing, Suffix Max (rightMax()) is monotonically decreasing
+// If rightMax(j) >= leftMax(i), g(i) = leftMax(i) since rightMax(i) >= rightMax(j) due to monotoncity of rightMax()
+// We can then use this value for g(i) to figure out water level for v[i] to add to the total, and then move i++ ahead
+// If leftMax(i) > rightMax(j), g(j) = rightMax(j) since leftMax(j) >= leftMax(i) due to monotonicity of leftMax()
+// We can then use this value for g(j) to figure out water level for v[j] to add to the total, and then move j-- ahead
+// Finally, when i and j cross over, we will have calculated the value for all indices in the elevation map v[]
+
 // Time Complexity: O(N) for covering all the elements of the array once
 // Space Complexity: O(1) since no extra data structure needed
 
 int trappingRainwater(vector<int>& v) {
-	int left = 0, right = v.size() - 1;            // Two pointers to move and cover the array
-	int leftMax = 0, rightMax = 0, total = 0;      // leftMax: curr. max from left, rightMax: curr. max from right
+	int left = 0, right = v.size() - 1;            // Two pointers (left for i, right for j) to move and cover the array
+	int leftMax = v[left], rightMax = v[right];    // leftMax: curr. max from left; rightMax: curr. max from right
+	int total = 0;                                 // Minmax ie. min(leftMax, rightMax) is the lower envelope function
 	while (left <= right) {                        // While the two pointers do not cross each other..
-		if (v[left] <= v[right]) {                 // leftMax <= rightMax too else v[left] at leftMax > v[right] switches to else{}
-			leftMax = max(leftMax, v[left]);       // Update the current leftMax if curr. v[left] > leftMax
+		leftMax = max(leftMax, v[left]);           // Update the current leftMax if curr. v[left] > leftMax
+		rightMax = max(rightMax, v[right]);        // Update the current rightMax if curr. v[right] > rightMax
+		if (leftMax <= rightMax) {                 // min(leftMax, rightMax) is leftMax since rightMax can only increase on right--
 			total += max(0, leftMax - v[left]);    // leftMax == min(leftMax, rightMax) as well since leftMax <= rightMax
-			left++;                                // Move left only if leftMax <= rightMax till we find a left > right
-		}                                          // right stays fixed for if{} so if left > right, v[left] > rightMax
-		else {                                     // This means that leftMax > rightMax too else v[right] at rightMax >= v[left] switches to if()
-			rightMax = max(rightMax, v[right]);    // Update the current rightMax if curr. v[right] > rightMax
+			left++;                                // Move left while leftMax <= rightMax till we find a leftMax > rightMax
+		}                                          // right stays fixed for if{} so if v[left] > rightMax, we switch to moving right
+		else {                                     // min(leftMax, rightMax) is rightMax since leftMax can only increase on left++
 			total += max(0, rightMax - v[right]);  // rightMax == min(leftMax, rightMax) as well since leftMax > rightMax
-			right--;                               // Move right only if leftMax > rightMax till we find a left <= right
-		}                                          // left stays fixed for else{} so if left <= right, v[left] <= rightMax
-	}
+			right--;                               // Move right while leftMax > rightMax till we find a rightMax >= leftMax
+		}                                          // left stays fixed for else{} so if v[right] > leftMax, we switch to moving left
+	}                                              // Due to if(), no need to know both leftMax and rightMax as we know their min()
 	return total;
 }
 
-// Method 4:- Two Pointers Approach - pointers to find the closest global/local peaks
+// Method 4:- Two Pointers Approach (Fastest) - pointers to find the closest global/local peaks
 // 1. Start with a total equal to 0
 // 2. Find first peak from the left (leftMax)
 // 3. Find the closest peak to the right of leftMax (rightMax)
