@@ -12,18 +12,18 @@ using namespace std;
 // Time complexity: O(N^2), Space complexity: O(1)
 
 int trappingRainwater1(vector<int>& v) {
-	int total = 0;
-	for (int i = 0; i < v.size(); i++) {
-		int leftMax = 0, rightMax = 0;
-		for (int l = i; l < v.size(); l++)
-			leftMax = max(leftMax, v[l]);
-		for (int r = i; r >= 0; r--)
-			rightMax = max(rightMax, v[r]);
+    int total = 0;
+    for (int i = 0; i < v.size(); i++) {
+        int leftMax = 0, rightMax = 0;
+        for (int l = i; l < v.size(); l++)
+            leftMax = max(leftMax, v[l]);
+        for (int r = i; r >= 0; r--)
+            rightMax = max(rightMax, v[r]);
 
-		int lvl = min(leftMax, rightMax);
-		total += max(0, lvl - v[i]);
-	}
-	return total;
+        int lvl = min(leftMax, rightMax);
+        total += (lvl - v[i]);
+    }
+    return total;
 }
 
 // Method 2:- Precompute Prefix Max and Suffix Max
@@ -34,20 +34,45 @@ int trappingRainwater1(vector<int>& v) {
 // Space Complexity: O(N) since extra space needed for suffix/prefix arrays
 
 int trappingRainwater2(vector<int>& v) {
-	int N = v.size(), total = 0;
-	vector<int> prefixMax(N, 0), suffixMax(N, 0);
-	prefixMax[0] = v[0], suffixMax[N - 1] = v[N - 1];
-	for (int i = 1; i < N; i++)
-		prefixMax[i] = max(v[i], prefixMax[i - 1]);
-	for (int j = N - 2; j >= 0; j--)
-		suffixMax[j] = max(v[j], suffixMax[j + 1]);
+    int N = v.size(), total = 0;
+    vector<int> prefixMax(N, 0), suffixMax(N, 0);
+    prefixMax[0] = v[0], suffixMax[N - 1] = v[N - 1];
+    for (int i = 1; i < N; i++)
+        prefixMax[i] = max(v[i], prefixMax[i - 1]);
+    for (int j = N - 2; j >= 0; j--)
+        suffixMax[j] = max(v[j], suffixMax[j + 1]);
 
-	for (int i = 0; i < v.size(); i++) {
-		int leftMax = prefixMax[i], rightMax = suffixMax[i];
-		int level = min(leftMax, rightMax);
-		total += max(0, level - v[i]);
-	}
-	return total;
+    for (int i = 0; i < v.size(); i++) {
+        int leftMax = prefixMax[i], rightMax = suffixMax[i];
+        int level = min(leftMax, rightMax);
+        total += (level - v[i]);
+    }
+    return total;
+}
+
+// Method 2':- Using Stacks (Similar to precomputation)
+// Calculate rightMax for all indices and store it in a stack
+// Don't precompute leftMax, do it on the go while calculating levels
+// Run a single loop to calculate leftMax, level and total for each index
+// Time Complexity: O(N)
+// Space Complexity: O(N)
+
+int trappingRainwater(vector<int>& v) {
+    int size = v.size();
+    stack<int> rightMax;
+    rightMax.push(v[size - 1]);                            // Initialize with rightmost element
+    for (int i = size - 1; i >= 0; i--) {
+        rightMax.push(max(rightMax.top(), v[i]));
+    }
+
+    int total = 0, leftMax = v[0];
+    for (int i = 0; i < size; i++) {
+        leftMax = max(leftMax, v[i]);
+        int lowerEnvelope = min(leftMax, rightMax.top());
+        total += (lowerEnvelope - v[i]);
+        rightMax.pop();
+    }
+    return total;
 }
 
 // Method 3:- Two Pointer Approach with Lower Envelope Technique
@@ -67,22 +92,22 @@ int trappingRainwater2(vector<int>& v) {
 // Space Complexity: O(1) since no extra data structure needed
 
 int trappingRainwater(vector<int>& v) {
-	int left = 0, right = v.size() - 1;            // Two pointers (left for i, right for j) to move and cover the array
-	int leftMax = v[left], rightMax = v[right];    // leftMax: curr. max from left; rightMax: curr. max from right
-	int total = 0;                                 // Minmax ie. min(leftMax, rightMax) is the lower envelope function
-	while (left <= right) {                        // While the two pointers do not cross each other..
-		leftMax = max(leftMax, v[left]);           // Update the current leftMax if curr. v[left] > leftMax
-		rightMax = max(rightMax, v[right]);        // Update the current rightMax if curr. v[right] > rightMax
-		if (leftMax <= rightMax) {                 // min(leftMax, rightMax) is leftMax since rightMax can only increase on right--
-			total += max(0, leftMax - v[left]);    // leftMax == min(leftMax, rightMax) as well since leftMax <= rightMax
-			left++;                                // Move left while leftMax <= rightMax till we find a leftMax > rightMax
-		}                                          // right stays fixed for if{} so if v[left] > rightMax, we switch to moving right
-		else {                                     // min(leftMax, rightMax) is rightMax since leftMax can only increase on left++
-			total += max(0, rightMax - v[right]);  // rightMax == min(leftMax, rightMax) as well since leftMax > rightMax
-			right--;                               // Move right while leftMax > rightMax till we find a rightMax >= leftMax
-		}                                          // left stays fixed for else{} so if v[right] > leftMax, we switch to moving left
-	}                                              // Due to if(), no need to know both leftMax and rightMax as we know their min()
-	return total;
+    int left = 0, right = v.size() - 1;            // Two pointers (left for i, right for j) to move and cover the array
+    int leftMax = v[left], rightMax = v[right];    // leftMax: curr. max from left; rightMax: curr. max from right
+    int total = 0;                                 // Minmax ie. min(leftMax, rightMax) is the lower envelope function
+    while (left <= right) {                        // While the two pointers do not cross each other..
+        leftMax = max(leftMax, v[left]);           // Update the current leftMax if curr. v[left] > leftMax
+        rightMax = max(rightMax, v[right]);        // Update the current rightMax if curr. v[right] > rightMax
+        if (leftMax <= rightMax) {                 // min(leftMax, rightMax) is leftMax since rightMax can only increase on right--
+            total += max(0, leftMax - v[left]);    // leftMax == min(leftMax, rightMax) as well since leftMax <= rightMax
+            left++;                                // Move left while leftMax <= rightMax till we find a leftMax > rightMax
+        }                                          // right stays fixed for if{} so if v[left] > rightMax, we switch to moving right
+        else {                                     // min(leftMax, rightMax) is rightMax since leftMax can only increase on left++
+            total += max(0, rightMax - v[right]);  // rightMax == min(leftMax, rightMax) as well since leftMax > rightMax
+            right--;                               // Move right while leftMax > rightMax till we find a rightMax >= leftMax
+        }                                          // left stays fixed for else{} so if v[right] > leftMax, we switch to moving left
+    }                                              // Due to if(), no need to know both leftMax and rightMax as we know their min()
+    return total;
 }
 
 // Method 4:- Two Pointers Approach (Fastest) - pointers to find the closest global/local peaks
@@ -102,73 +127,73 @@ int trappingRainwater(vector<int>& v) {
 // Space Complexity: O(1) since no extra data structure used
 
 int trappingRainwater4(vector<int>& v) {
-	int total = 0, leftMax = 0, x = 0;
-	for (int i = 1; i < v.size(); i++) {
-		if (v[0] < v[1] && v[i] >= v[i + 1] && v[i] > v[i - 1]) {
-			leftMax = i;
-			break;
-		}
-	}
+    int total = 0, leftMax = 0, x = 0;
+    for (int i = 1; i < v.size(); i++) {
+        if (v[0] < v[1] && v[i] >= v[i + 1] && v[i] > v[i - 1]) {
+            leftMax = i;
+            break;
+        }
+    }
 
-	while (x != v.size()) {
-		int rightMax = leftMax, tempPeak = 0;
+    while (x != v.size()) {
+        int rightMax = leftMax, tempPeak = 0;
 
-		for (int j = leftMax + 1; j < v.size(); j++) {
-			if (j == v.size() - 1) {
-				if (v[j] > v[j - 1] && v[j] > tempPeak) {
-					rightMax = j;
-					break;
-				}
-			}
-			else if (v[leftMax] > v[j] && v[j] >= v[j + 1] && v[j] > v[j - 1] && v[j] > tempPeak) {
-				rightMax = j;
-				tempPeak = v[j];
-				continue;
-			}
-			else if (v[j] >= v[leftMax] && v[j] >= v[j + 1] && v[j] > v[j - 1]) {
-				rightMax = j;
-				break;
-			}
-		}
+        for (int j = leftMax + 1; j < v.size(); j++) {
+            if (j == v.size() - 1) {
+                if (v[j] > v[j - 1] && v[j] > tempPeak) {
+                    rightMax = j;
+                    break;
+                }
+            }
+            else if (v[leftMax] > v[j] && v[j] >= v[j + 1] && v[j] > v[j - 1] && v[j] > tempPeak) {
+                rightMax = j;
+                tempPeak = v[j];
+                continue;
+            }
+            else if (v[j] >= v[leftMax] && v[j] >= v[j + 1] && v[j] > v[j - 1]) {
+                rightMax = j;
+                break;
+            }
+        }
 
-		int lvl = min(v[leftMax], v[rightMax]);
-		x = leftMax + 1;
-		while (x < rightMax)
-			total += max(0, lvl - v[x++]);
+        int lvl = min(v[leftMax], v[rightMax]);
+        x = leftMax + 1;
+        while (x < rightMax)
+            total += max(0, lvl - v[x++]);
 
-		if (leftMax == rightMax)
-			break;
+        if (leftMax == rightMax)
+            break;
 
-		leftMax = rightMax;
-	}
-	return total;
+        leftMax = rightMax;
+    }
+    return total;
 }
 
 
 int main() {
-	ios_base::sync_with_stdio(false);
-	cin.tie(NULL);
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
 
 #ifndef ONLINE_JUDGE
-	freopen("input.txt", "r", stdin);
-	freopen("output.txt", "w", stdout);
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
 #endif
 
-	int testNum;
-	cin >> testNum;
-	while (testNum--) {
-		int size;
-		cin >> size;
-		vector<int> v;
-		for (int i = 0; i < size; i++) {
-			int ele;
-			cin >> ele;
-			v.push_back(ele);
-		}
+    int testNum;
+    cin >> testNum;
+    while (testNum--) {
+        int size;
+        cin >> size;
+        vector<int> v;
+        for (int i = 0; i < size; i++) {
+            int ele;
+            cin >> ele;
+            v.push_back(ele);
+        }
 
-		cout << trappingRainwater(v) << endl;
-	}
-	return 0;
+        cout << trappingRainwater(v) << endl;
+    }
+    return 0;
 }
 
 // Incorrect approach based on finding closest local peaks:
@@ -176,30 +201,30 @@ int main() {
 // Doesn't work for [4,2,0,3,2,4,3,4] as global peaks at [0] and [5] overshadow local peak at [3]
 
 // int trappingRainwater(vector<int>& v) {
-// 	vector<int> peaks;
-// 	if (v.size() > 1) {
-// 		if (v[0] >= v[1])
-// 			peaks.push_back(0);
-// 		for (int i = 1; i < v.size() - 1; i++)
-// 			if ((v[i] >= v[i + 1] && v[i] > v[i - 1]))   // Gets local peaks only
-// 				peaks.push_back(i);
-// 		if (v[v.size() - 1] > v[v.size() - 2])
-// 			peaks.push_back(v.size() - 1);
-// 	}
-// 	else {
-// 		return 0;
-// 	}
+//  vector<int> peaks;
+//  if (v.size() > 1) {
+//      if (v[0] >= v[1])
+//          peaks.push_back(0);
+//      for (int i = 1; i < v.size() - 1; i++)
+//          if ((v[i] >= v[i + 1] && v[i] > v[i - 1]))   // Gets local peaks only
+//              peaks.push_back(i);
+//      if (v[v.size() - 1] > v[v.size() - 2])
+//          peaks.push_back(v.size() - 1);
+//  }
+//  else {
+//      return 0;
+//  }
 
-// 	int total = 0;
-// 	for (int i = 0; i < peaks.size() - 1; i++) {
-// 		int j = i + 1, currSum = 0;
-// 		for (int x = peaks[i] + 1; x < peaks[j]; x++) {
-// 			int lvl = min(v[peaks[i]], v[peaks[j]]);
-// 			currSum += max(0, lvl - v[x]);
-// 		}
-// 		total += currSum;
-// 	}
-// 	return total;
+//  int total = 0;
+//  for (int i = 0; i < peaks.size() - 1; i++) {
+//      int j = i + 1, currSum = 0;
+//      for (int x = peaks[i] + 1; x < peaks[j]; x++) {
+//          int lvl = min(v[peaks[i]], v[peaks[j]]);
+//          currSum += max(0, lvl - v[x]);
+//      }
+//      total += currSum;
+//  }
+//  return total;
 // }
 
 // Testcases:-
